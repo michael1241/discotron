@@ -5,9 +5,6 @@ from flask import Flask, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 
-import discord
-from discord.utils import get
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -15,6 +12,8 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 database_file = "sqlite:///{}".format(os.path.join(project_dir, "discotron.db"))
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 app.secret_key = os.getenv("SECRET_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
