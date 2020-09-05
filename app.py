@@ -77,7 +77,8 @@ def outcome():
     if not session['lichesspatron']:
         return("The Lichess account you have linked doesn't currently have patron.")
     user = User.query.filter_by(lichessid=session['lichessid']).first()
-    olddiscorduser = user.discorduser if user else None
+    session['olddiscordid'] = user.discordid if user else None
+    session['olddiscorduser'] = user.discorduser if user else None
     if user:
         db.session.delete(user)
         db.session.commit()
@@ -89,14 +90,16 @@ def outcome():
     db.session.commit()
 
     headers = {'Authorization': f'Bot {os.getenv("DISCORD_TOKEN")}'}
-    r = requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
-    #guild id, user id and role id
-
-    if olddiscorduser:
-        return(f'''{user.lichessid} was associated with {olddiscorduser} and now is associated with {user.discorduser}''')
-    return(f'''{user.lichessid} is now associated with {user.discorduser}''')
-
-
+    if user.discordid == session['olddiscordid']:
+        r = requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+        return(f'''Lichess user {user.lichessid} is already associated with discord user {user.discorduser} ID: {user.discordid}''')
+    elif session['olddiscordid']:
+        r = requests.delete(f'''https://discordapp.com/api/guilds/280713822073913354/members/{session['olddiscordid']}/roles/751092271025487942''', headers=headers, data=None)
+        r = requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+        return(f'''Lichess user {user.lichessid} was associated with discord user {session['olddiscorduser']} and now is associated with {user.discorduser}''')
+    else:
+        r = requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+        return(f'''Lichess user {user.lichessid} is now associated with {user.discorduser}''')
 
 if __name__ == '__main__':
     app.run()
