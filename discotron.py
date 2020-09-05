@@ -67,7 +67,7 @@ def authorizelichess():
     headers = {'Authorization': f'Bearer {bearer}'}
     response = requests.get("https://lichess.org/api/account", headers=headers).json()
     session['lichessid'] = response['id']
-    session['lichesspatron'] = response['patron']
+    session['lichesspatron'] = response.get('patron', False)
     return redirect('outcome')
 
 

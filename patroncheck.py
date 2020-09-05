@@ -19,7 +19,7 @@ for user in users:
             continue #try again
         time.sleep(1) #sleep to avoid ratelimiting
         break
-    patron = response.json()['patron']
+    patron = response.json().get('patron', False)
     if patron == user.lichesspatron: #db is correct
         continue
     headers = {'Authorization': f'Bot {os.getenv("DISCORD_TOKEN")}'}
