@@ -1,0 +1,4 @@
+flask
+authlib
+dotenv
+sqlalchemy
