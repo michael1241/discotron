@@ -1,4 +1,6 @@
 flask
+flask-sqlalchemy
 authlib
-dotenv
+python-dotenv
 sqlalchemy
+requests
