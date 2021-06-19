@@ -30,18 +30,16 @@ class User(db.Model):
         return f'{self.discorduser}, {self.discordid}, {self.lichessid}, {self.lichesspatron}'
 
 app.config['LICHESS_CLIENT_ID'] =  os.getenv("LICHESS_CLIENT_ID")
-app.config['LICHESS_CLIENT_SECRET'] = os.getenv("LICHESS_CLIENT_SECRET")
-app.config['LICHESS_ACCESS_TOKEN_URL'] = 'https://oauth.lichess.org/oauth'
-app.config['LICHESS_AUTHORIZE_URL'] = 'https://oauth.lichess.org/oauth/authorize'
+app.config['LICHESS_ACCESS_TOKEN_URL'] = 'https://lichess.org/api/token'
+app.config['LICHESS_AUTHORIZE_URL'] = 'https://lichess.org/oauth'
 
 app.config["DISCORD_CLIENT_ID"] = os.getenv("DISCORD_CLIENT_ID")
 app.config["DISCORD_CLIENT_SECRET"] = os.getenv("DISCORD_CLIENT_SECRET")
 app.config["DISCORD_AUTHORIZE_URL"] = 'https://discord.com/api/oauth2/authorize'
 app.config["DISCORD_ACCESS_TOKEN_URL"] = 'https://discordapp.com/api/oauth2/token'
-app.config["DISCORD_BOT_TOKEN"] = os.getenv("DISCORD_TOKEN")
 
 oauth = OAuth(app)
-oauth.register('lichess')
+oauth.register('lichess', client_kwargs={"code_challenge_method": "S256"})
 oauth.register('discord')
 
 @app.route('/')
