@@ -19,17 +19,18 @@ app.secret_key = os.getenv("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
 db = SQLAlchemy(app)
 
+
 class User(db.Model):
     lichessid = db.Column(db.String(80), unique=True, nullable=False, primary_key=True)
     lichesspatron = db.Column(db.Boolean(), nullable=False)
     discorduser = db.Column(db.String(80), unique=True, nullable=False)
     discordid = db.Column(db.Integer(), unique=True, nullable=False)
 
-
     def __repr__(self):
         return f'{self.discorduser}, {self.discordid}, {self.lichessid}, {self.lichesspatron}'
 
-app.config['LICHESS_CLIENT_ID'] =  os.getenv("LICHESS_CLIENT_ID")
+
+app.config['LICHESS_CLIENT_ID'] = os.getenv("LICHESS_CLIENT_ID")
 app.config['LICHESS_ACCESS_TOKEN_URL'] = 'https://lichess.org/api/token'
 app.config['LICHESS_AUTHORIZE_URL'] = 'https://lichess.org/oauth'
 
@@ -42,10 +43,12 @@ oauth = OAuth(app)
 oauth.register('lichess', client_kwargs={"code_challenge_method": "S256"})
 oauth.register('discord')
 
+
 @app.route('/')
 def start():
     redirect_uri = url_for("authorizediscord", _external=True)
     return oauth.discord.authorize_redirect(redirect_uri, scope="identify", response_type="code")
+
 
 @app.route('/authorizediscord')
 def authorizediscord():
@@ -57,6 +60,7 @@ def authorizediscord():
     session['discordid'] = response['id']
     redirect_uri = url_for("authorizelichess", _external=True)
     return oauth.lichess.authorize_redirect(redirect_uri)
+
 
 @app.route('/authorizelichess')
 def authorizelichess():
@@ -76,7 +80,7 @@ def outcome():
         return("The Lichess account you have linked doesn't currently have patron.")
     user = User.query.filter_by(lichessid=session['lichessid']).first()
     if not user:
-        #case where switching between lichess accounts, associated with the same discord account
+        # case where switching between lichess accounts, associated with the same discord account
         user = User.query.filter_by(discordid=session['discordid']).first()
     if user:
         session['olddiscordid'] = getattr(user, 'discordid', None)
@@ -92,18 +96,21 @@ def outcome():
     db.session.commit()
 
     headers = {'Authorization': f'Bot {os.getenv("DISCORD_TOKEN")}'}
-    if user.discordid == session['olddiscordid'] and user.lichessid == session['oldlichessid']:
-        requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
-        return(f'''Lichess user {session['lichessusername']} is already associated with discord user {user.discorduser} ID: {user.discordid}. Thanks for your support!''')
-    if user.discordid != session['olddiscordid'] and user.lichessid == session['oldlichessid']:
-        requests.delete(f'''https://discordapp.com/api/guilds/280713822073913354/members/{session['olddiscordid']}/roles/751092271025487942''', headers=headers, data=None)
-        requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
-        return(f'''Lichess user {session['lichessusername']} was associated with discord user {session['olddiscorduser']} and now is associated with {user.discorduser}. Thanks for your support!''')
-    if user.discordid == session['olddiscordid'] and user.lichessid != session['oldlichessid']:
-        requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
-        return(f'''Discord user {session['discorduser']} was associated with Lichess user {session['oldlichessid']} and now is associated with {user.lichessid}. Thanks for your support!''')
+    olddiscordid = session.get('olddiscordid')
+    if olddiscordid:
+        if user.discordid == olddiscordid and user.lichessid == session['oldlichessid']:
+            requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+            return(f'''Lichess user {session['lichessusername']} is already associated with discord user {user.discorduser} ID: {user.discordid}. Thanks for your support!''')
+        if user.discordid != olddiscordid and user.lichessid == session['oldlichessid']:
+            requests.delete(f'''https://discordapp.com/api/guilds/280713822073913354/members/{olddiscordid}/roles/751092271025487942''', headers=headers, data=None)
+            requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+            return(f'''Lichess user {session['lichessusername']} was associated with discord user {session['olddiscorduser']} and now is associated with {user.discorduser}. Thanks for your support!''')
+        if user.discordid == olddiscordid and user.lichessid != session['oldlichessid']:
+            requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
+            return(f'''Discord user {session['discorduser']} was associated with Lichess user {session['oldlichessid']} and now is associated with {user.lichessid}. Thanks for your support!''')
     requests.put(f'https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942', headers=headers, data=None)
     return(f'''Lichess user {session['lichessusername']} is now associated with {user.discorduser}. Thanks for your support!''')
+
 
 if __name__ == '__main__':
     app.run()
