@@ -1,12 +1,21 @@
 import os
 import requests
 
-from flask import Flask, jsonify, session, redirect, url_for
+from flask import Flask, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 
 from dotenv import load_dotenv
 load_dotenv()
+
+
+def get_env_or_secret(key):
+    value = os.getenv(key)
+    if value:
+        return value
+    with open(f"/run/secrets/{key}", "r") as f:
+        return f.read().strip()
+
 
 project_dir = os.path.dirname(os.path.abspath(__file__))
 database_file = "sqlite:///{}".format(os.path.join(project_dir, "discotron.db"))
@@ -14,7 +23,7 @@ database_file = "sqlite:///{}".format(os.path.join(project_dir, "discotron.db"))
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = get_env_or_secret("SECRET_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
 db = SQLAlchemy(app)
@@ -30,12 +39,12 @@ class User(db.Model):
         return f'{self.discorduser}, {self.discordid}, {self.lichessid}, {self.lichesspatron}'
 
 
-app.config['LICHESS_CLIENT_ID'] = os.getenv("LICHESS_CLIENT_ID")
+app.config['LICHESS_CLIENT_ID'] = get_env_or_secret("LICHESS_CLIENT_ID")
 app.config['LICHESS_ACCESS_TOKEN_URL'] = 'https://lichess.org/api/token'
 app.config['LICHESS_AUTHORIZE_URL'] = 'https://lichess.org/oauth'
 
-app.config["DISCORD_CLIENT_ID"] = os.getenv("DISCORD_CLIENT_ID")
-app.config["DISCORD_CLIENT_SECRET"] = os.getenv("DISCORD_CLIENT_SECRET")
+app.config["DISCORD_CLIENT_ID"] = get_env_or_secret("DISCORD_CLIENT_ID")
+app.config["DISCORD_CLIENT_SECRET"] = get_env_or_secret("DISCORD_CLIENT_SECRET")
 app.config["DISCORD_AUTHORIZE_URL"] = 'https://discord.com/api/oauth2/authorize'
 app.config["DISCORD_ACCESS_TOKEN_URL"] = 'https://discordapp.com/api/oauth2/token'
 
@@ -95,7 +104,7 @@ def outcome():
     db.session.add(user)
     db.session.commit()
 
-    headers = {'Authorization': f'Bot {os.getenv("DISCORD_TOKEN")}'}
+    headers = {'Authorization': f'Bot {get_env_or_secret("DISCORD_TOKEN")}'}
     olddiscordid = session.get('olddiscordid')
     if olddiscordid:
         if user.discordid == olddiscordid and user.lichessid == session['oldlichessid']:
@@ -113,4 +122,4 @@ def outcome():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
