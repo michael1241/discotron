@@ -4,17 +4,24 @@ import logging
 from discotron import app, db, User
 import time
 
+user_agent = "Lichess Discotron discotron.lichess.org"
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+logger.info("Starting patron check...")
 
 with app.app_context():
     users = User.query.all()
     patrons_added = []
     patrons_removed = []
 
-    for user in users:
+    logger.info(f"Total users to check: {len(users)}")
+
+    for idx, user in enumerate(users, start=1):
+        logger.info(f"Checking user {idx}/{len(users)}: Discord ID: {user.discordid}, Lichess ID: {user.lichessid}")
         while True:
-            response = requests.get(f"https://lichess.org/api/user/{user.lichessid}")
+            response = requests.get(f"https://lichess.org/api/user/{user.lichessid}", headers={'User-Agent': user_agent})
             if response.status_code == 429:
                 logger.warning(f"Rate limited by Lichess API, sleeping for 2 minutes...")
                 time.sleep(60*2) #sleep if getting ratelimited
