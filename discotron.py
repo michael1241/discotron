@@ -1,7 +1,7 @@
 import os
 import requests
 
-from flask import Flask, session, redirect, url_for
+from flask import Flask, session, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 
@@ -61,6 +61,8 @@ def start():
 
 @app.route('/authorizediscord')
 def authorizediscord():
+    if request.args.get('error') == 'access_denied':
+        return "Discord authorization cancelled"
     token = oauth.discord.authorize_access_token()
     bearer = token['access_token']
     headers = {'Authorization': f'Bearer {bearer}'}
