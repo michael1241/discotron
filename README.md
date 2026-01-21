@@ -11,6 +11,7 @@ docker build -t discotron  .
 docker run -it --rm discotron bash
 
 docker run -it --rm \
+    -v $(pwd)/discotron.db:/app/discotron.db \
     -e SECRET_KEY=abc123 \
     -e LICHESS_CLIENT_ID=discotron \
     -e DISCORD_CLIENT_ID=discord-client-id \

@@ -4,3 +4,4 @@ authlib
 python-dotenv
 sqlalchemy
 requests
+tabulate

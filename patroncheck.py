@@ -48,7 +48,7 @@ with app.app_context():
     users = User.query.all()
 
     for idx, user in enumerate(users, start=1):
-        logger.info(f"Checking user {idx}/{len(users)}: Lichess: {user.lichessid}, Discord: {user.discordid}")
+        logger.info(f"Checking user {idx}/{len(users)}: Lichess: {user.lichessid}, Discord: {user.discorduser}")
         patron = user_patron_status.get(user.lichessid, False)
         if patron == user.lichesspatron: #db is correct
             logger.info("No change needed.")
@@ -56,19 +56,19 @@ with app.app_context():
         headers = {'Authorization': f'Bot {os.getenv("DISCORD_TOKEN")}'}
         if not patron and user.lichesspatron: #patron in database but not on website
             #remove patron on discord and db
-            logger.info(f"🔴 Removing patron role for Discord ID: {user.discordid}")
+            logger.info(f"🔴 Removing patron role for Discord user: {user.discorduser}")
             requests.delete(f'''https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942''', headers=headers, data=None)
             setattr(user, 'lichesspatron', False)
             db.session.commit()
-            patrons_removed.append(user)
+            patrons_removed.append(user.lichessid)
             continue
         if patron and not user.lichesspatron: #patron on website but not in database
             #add patron on discord and db
-            logger.info(f"🟢 Adding patron role for Discord ID: {user.discordid}")
+            logger.info(f"🟢 Adding patron role for Discord user: {user.discorduser}")
             requests.put(f'''https://discordapp.com/api/guilds/280713822073913354/members/{user.discordid}/roles/751092271025487942''', headers=headers, data=None)
             setattr(user, 'lichesspatron', True)
             db.session.commit()
-            patrons_added.append(user)
+            patrons_added.append(user.lichessid)
             continue
 
 print("\n" + "="*50)
@@ -77,8 +77,8 @@ print("="*50)
 print(f"Total users checked: {user_count}")
 print(f"\nPatrons added ({len(patrons_added)}):")
 for user in patrons_added:
-    print(f"  - Discord: {user.discordid}, Lichess: {user.lichessid}")
+    print(f"  - {user}")
 print(f"\nPatrons removed ({len(patrons_removed)}):")
 for user in patrons_removed:
-    print(f"  - Discord: {user.discordid}, Lichess: {user.lichessid}")
+    print(f"  - {user}")
 print("="*50)
