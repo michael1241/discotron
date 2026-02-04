@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: deploy web
+        if: ${{ github.event_name != 'schedule' }}
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEB }}
+        run: curl -X POST $DEPLOY_WEBHOOK_URL
+      - name: deploy updater
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_UPDATER }}
+        run: curl -X POST $DEPLOY_WEBHOOK_URL
