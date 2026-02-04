@@ -3,8 +3,6 @@ name: Docker
 on:
   workflow_dispatch:
   push:
-  schedule:
-    - cron: '0 3 * * *'
 
 jobs:
   build:
@@ -49,13 +47,5 @@ jobs:
   deploy:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: deploy web
-        env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEB }}
-        run: curl -X POST $DEPLOY_WEBHOOK_URL
-      - name: deploy updater
-        env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_UPDATER }}
-        run: curl -X POST $DEPLOY_WEBHOOK_URL
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
